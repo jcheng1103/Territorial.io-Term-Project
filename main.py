@@ -4,6 +4,7 @@ from cmu_112_graphics import *
 from countryObject import *
 
 #returns width, hight
+#Don't change this
 def dimensions():
     width = 800
     height = 900
@@ -12,8 +13,14 @@ def dimensions():
 def appStarted(app):
     app.width, app.height = dimensions()
     app.cellSize = 10
+    app.drawnCellSize = 10 #To account for zooming
     app.rows = 80
     app.cols = 80
+    #Which section of board will be displayed (top left bound)
+    app.boardDrawX = 0
+    app.boardDrawY = 0
+    app.mouseX = 0
+    app.mouseY = 0
     app.hudHeight = app.height-app.cols*app.cellSize
     #sliderBox is the coordinates for the bounding box of the attack slider
     app.sliderBox = (app.width*0.35,
@@ -45,15 +52,22 @@ def appStarted(app):
 
 def drawBoard(app,canvas):
     #Drawing all cells
+    #cSize = app.drawnCellSize
+    cSize = app.cellSize
     for i in range(app.rows):
         for j in range(app.cols):
-            x0, y0 = i*app.cellSize, j*app.cellSize
-            x1, y1 = x0+app.cellSize, y0+app.cellSize
+            x0, y0 = i*cSize-app.boardDrawX, j*cSize-app.boardDrawY
+            x1, y1 = x0+cSize-app.boardDrawX, y0+cSize-app.boardDrawY
             id = app.board[i][j]
             fill = app.defaultFill
             if (id != -1):
                 fill = app.dict[id].color
             canvas.create_rectangle(x0,y0,x1,y1,fill=fill,outline=fill)
+
+#Function to conver color int to hex value
+def hexRGB(n):
+    hexList = "0123456789ABCDEF"
+    return hexList[n//16] + hexList[n%16] 
 
 def sliderColor(player):
     """when proportion is 0.0, slider is green, when proportion is 1.0,
@@ -62,9 +76,11 @@ def sliderColor(player):
     r = int(255*player.attackProportion)
     g = int(255*(1-player.attackProportion))
     b = int(100*(1-player.attackProportion))
-    return "#"+hex(r)[2:]+hex(g)[2:]+hex(b)[2:]
+    return "#"+hexRGB(r)+hexRGB(g)+hexRGB(b)
 
 def drawHud(app,canvas):
+    #Hud background
+    canvas.create_rectangle(0,app.width,app.width,app.height,fill="#FFFFFF")
     #Hud border with game board
     canvas.create_line(0,app.cellSize*app.cols,app.width,app.cellSize*app.cols,
     fill = "red",width = 3)
@@ -78,16 +94,65 @@ def drawHud(app,canvas):
 
     #Displaying slider
     x0,y0,x1,y1 = app.sliderBox
-    canvas.create_rectangle(x0,y0,x1,y1,outline="black",fill="#303030")
+    canvas.create_rectangle(x0,y0,x1,y1,outline="#A0A0A0",fill="#303030")
     canvas.create_rectangle(x0,y0,x0+(x1-x0)*player.attackProportion,y1,
-    fill=sliderColor(player),outline="black")
+    fill=sliderColor(player),outline="#A0A0A0")
     attackMon = int(player.money*player.attackProportion)
     canvas.create_text((x0+x1)/2, (y0+y1)/2, text=f'{attackMon}', 
     fill='white', font=font)
 
+    #Slider buttons
+    font=('Comic Sans MS', 40, 'bold italic')
+    canvas.create_rectangle(x0-(y1-y0),y0,x0,y1,
+    outline="#A0A0A0",fill="#303030")
+    canvas.create_text(x0-(y1-y0)/2, (y0+y1)/2, text='-', 
+    fill='white', font=font)
+    canvas.create_rectangle(x1,y0,x1+(y1-y0),y1,
+    outline="#A0A0A0",fill="#303030")
+    canvas.create_text(x1+(y1-y0)/2, (y0+y1)/2, text='+', 
+    fill='white', font=font)
+
+def mousePressed(app, event):
+    #The id of the player is always 0
+    player = app.dict[0]
+
+    #When slider is clicked
+    x0,y0,x1,y1 = app.sliderBox
+    if (event.x > x0 and event.x < x1 and event.y > y0 and event.y < y1):
+        player.attackProportion = (event.x-x0)/(x1-x0)
+    #When slider buttons are clicked
+    if (event.x > x0-(y1-y0) and event.x < x0 and 
+    event.y > y0 and event.y < y1):
+        player.attackProportion -= 0.05
+    if (event.x > x1 and event.x < x1+(y1-y0) and 
+    event.y > y0 and event.y < y1):
+        player.attackProportion += 0.05
+
+def mouseDragged(app, event):
+    player = app.dict[0]
+
+    #When player drags mouse across slider
+    x0,y0,x1,y1 = app.sliderBox
+    if (event.x > x0 and event.x < x1 and event.y > y0 and event.y < y1):
+        player.attackProportion = (event.x-x0)/(x1-x0)
+
+def mouseMoved(app, event):
+    app.mouseX = event.x
+    app.mouseY = event.y
 
 def keyPressed(app, event):
-    return
+    #Zooming in and out, change cell size and bounds of board to be drawn
+    #Keep the point the mouse is on invariant
+    """
+    if(event.key == "w" and app.drawnCellSize < app.cellSize*10):
+        app.drawnCellSize += 1
+        app.boardDrawX += app.drawnCellSize
+        app.boardDrawY += app.drawnCellSize
+    if (event.key == "s" and app.drawnCellSize > app.cellSize):
+        app.drawnCellSize -= 1
+        app.boardDrawX -= app.drawnCellSize
+        app.boardDrawY -= app.drawnCellSize
+    """
 
 def timerFired(app):
     return
