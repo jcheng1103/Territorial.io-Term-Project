@@ -16,9 +16,9 @@ def appStarted(app):
     app.drawnCellSize = 10 #To account for zooming
     app.rows = 80
     app.cols = 80
-    #Which section of board will be displayed (top left bound)
-    app.boardDrawX = 0
-    app.boardDrawY = 0
+    #Which section of board will be displayed (top left and bottom right bound)
+    app.boardTopLeft = (0,0)
+    app.boardBottomRight = (app.width,app.width)
     app.mouseX = 0
     app.mouseY = 0
     app.hudHeight = app.height-app.cols*app.cellSize
@@ -51,18 +51,21 @@ def appStarted(app):
         app.board[row][col] = i
 
 def drawBoard(app,canvas):
-    #Drawing all cells
-    #cSize = app.drawnCellSize
-    cSize = app.cellSize
+    x0, y0 = app.boardTopLeft
+    x1, y1 = app.boardBottomRight
+    canvas.create_rectangle(x0,y0,x1,y1,fill=app.defaultFill,outline='red',
+    width=5)
+    cSize = (app.boardBottomRight[0]-app.boardTopLeft[0])/app.cols
+    print(cSize)
     for i in range(app.rows):
         for j in range(app.cols):
-            x0, y0 = i*cSize-app.boardDrawX, j*cSize-app.boardDrawY
-            x1, y1 = x0+cSize-app.boardDrawX, y0+cSize-app.boardDrawY
             id = app.board[i][j]
-            fill = app.defaultFill
             if (id != -1):
+                x0,y0=i*cSize+app.boardTopLeft[0],j*cSize+app.boardTopLeft[1]
+                x1,y1=x0+cSize,y0+cSize
+                print(x0,y0,x1,y1)
                 fill = app.dict[id].color
-            canvas.create_rectangle(x0,y0,x1,y1,fill=fill,outline=fill)
+                canvas.create_rectangle(x0,y0,x1,y1,fill=fill,outline=fill)
 
 #Function to conver color int to hex value
 def hexRGB(n):
@@ -135,24 +138,42 @@ def mouseDragged(app, event):
     x0,y0,x1,y1 = app.sliderBox
     if (event.x > x0 and event.x < x1 and event.y > y0 and event.y < y1):
         player.attackProportion = (event.x-x0)/(x1-x0)
+    #When player drags mouse across slider
+    if (event.y < app.width):
+        xShift = event.x-app.mouseX
+        yShift = event.y-app.mouseY
+        app.boardTopLeft = (app.boardTopLeft[0]+xShift,
+                            app.boardTopLeft[1]+yShift)
+        app.boardBottomRight = (app.boardBottomRight[0]+xShift,
+                            app.boardBottomRight[1]+yShift)
+        app.mouseX = event.x
+        app.mouseY = event.y
 
 def mouseMoved(app, event):
     app.mouseX = event.x
     app.mouseY = event.y
 
+#Scales the location of top right and bottom right bound
+#sf = scale factor
+def scale(app, sf):
+    topLeftVec = ((app.boardTopLeft[0]-app.mouseX)*sf,
+                (app.boardTopLeft[1]-app.mouseY)*sf)
+    bottomRightVec = ((app.boardBottomRight[0]-app.mouseX)*sf,
+                    (app.boardBottomRight[1]-app.mouseY)*sf)
+    return ((topLeftVec[0]+app.mouseX,topLeftVec[1]+app.mouseY),
+            (bottomRightVec[0]+app.mouseX, bottomRightVec[1]+app.mouseY))
+
 def keyPressed(app, event):
     #Zooming in and out, change cell size and bounds of board to be drawn
     #Keep the point the mouse is on invariant
-    """
-    if(event.key == "w" and app.drawnCellSize < app.cellSize*10):
-        app.drawnCellSize += 1
-        app.boardDrawX += app.drawnCellSize
-        app.boardDrawY += app.drawnCellSize
-    if (event.key == "s" and app.drawnCellSize > app.cellSize):
-        app.drawnCellSize -= 1
-        app.boardDrawX -= app.drawnCellSize
-        app.boardDrawY -= app.drawnCellSize
-    """
+
+    #Zoom limit = 10x
+    if(event.key == "w" and 
+    (app.boardBottomRight[0]-app.boardTopLeft[0])*1.1 <= app.width*10):
+        app.boardTopLeft, app.boardBottomRight = scale(app,1.1)
+    if (event.key == "s"):
+        #Maximum zoom out is 1x
+        app.boardTopLeft, app.boardBottomRight = scale(app,0.9)
 
 def timerFired(app):
     return
