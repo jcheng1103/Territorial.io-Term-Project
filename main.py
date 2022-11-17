@@ -1,5 +1,4 @@
 import math, copy, random
-
 from cmu_112_graphics import *
 from countryObject import *
 
@@ -11,6 +10,7 @@ def dimensions():
     return width,height
 
 def appStarted(app):
+    app.timerDelay = 500
     app.width, app.height = dimensions()
     app.cellSize = 10
     app.drawnCellSize = 10 #To account for zooming
@@ -53,17 +53,15 @@ def appStarted(app):
 def drawBoard(app,canvas):
     x0, y0 = app.boardTopLeft
     x1, y1 = app.boardBottomRight
-    canvas.create_rectangle(x0,y0,x1,y1,fill=app.defaultFill,outline='red',
-    width=5)
+    canvas.create_rectangle(x0-10,y0-10,x1+10,y1+10,fill='white') #Map border
+    canvas.create_rectangle(x0,y0,x1,y1,fill=app.defaultFill,width=0)
     cSize = (app.boardBottomRight[0]-app.boardTopLeft[0])/app.cols
-    print(cSize)
     for i in range(app.rows):
         for j in range(app.cols):
             id = app.board[i][j]
             if (id != -1):
                 x0,y0=i*cSize+app.boardTopLeft[0],j*cSize+app.boardTopLeft[1]
                 x1,y1=x0+cSize,y0+cSize
-                print(x0,y0,x1,y1)
                 fill = app.dict[id].color
                 canvas.create_rectangle(x0,y0,x1,y1,fill=fill,outline=fill)
 
@@ -171,14 +169,17 @@ def keyPressed(app, event):
     if(event.key == "w" and 
     (app.boardBottomRight[0]-app.boardTopLeft[0])*1.1 <= app.width*10):
         app.boardTopLeft, app.boardBottomRight = scale(app,1.1)
-    if (event.key == "s"):
+    if (event.key == "s"and 
+    (app.boardBottomRight[0]-app.boardTopLeft[0])*0.9 >= app.width*0.1):
         #Maximum zoom out is 1x
         app.boardTopLeft, app.boardBottomRight = scale(app,0.9)
 
 def timerFired(app):
-    return
+    for key in app.dict:
+        app.dict[key].updateMoney()
 
 def redrawAll(app, canvas):
+    canvas.create_rectangle(0,0,800,800,fill="black")
     drawBoard(app, canvas)
     drawHud(app, canvas)
 
