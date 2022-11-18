@@ -20,10 +20,17 @@ def gameInit(app):
                     app.cols*app.cellSize+app.hudHeight/2-app.hudHeight*0.3,
                     app.width*7/8,
                     app.cols*app.cellSize+app.hudHeight/2+app.hudHeight*0.3)
+    app.warningWindowDims = (app.width/2-200,app.width/2-150,
+                        app.width/2+200,app.width/2+150)
+    x0,y0,x1,y1 = app.warningWindowDims
+    app.yesButton = (x0+(x1-x0)*0.1,y0+(y1-y0)*0.7,
+                    x0+(x1-x0)*0.3,y0+(y1-y0)*0.85)
+    app.noButton = (x0+(x1-x0)*0.7,y0+(y1-y0)*0.7,
+                    x0+(x1-x0)*0.9,y0+(y1-y0)*0.85)
     app.players = 5
     app.defaultFill = "#1A1A1A"
-    app.countryColors = ["blue","#ffff00","#00ff00","#00ffff","#ff0000"]
-    app.names = ["Player", "Bot 1", "Bot 2", "Bot 3", "Bot 4"]
+    app.countryColors = [app.playerColor,"#ffff00","#00ff00","#00ffff","#ff0000"]
+    app.names = [app.playerName, "Bot 1", "Bot 2", "Bot 3", "Bot 4"]
     #Dictionary that supports using a country's integer id to find the
     #corrsponding country object
     app.dict = {}
@@ -150,7 +157,40 @@ def drawHud(app,canvas):
     canvas.create_text(x1+(y1-y0)/2, (y0+y1)/2, text='+', 
     fill='white', font=font)
 
+def drawWarningWindow(app, canvas):
+    x0,y0,x1,y1 = app.warningWindowDims
+    canvas.create_rectangle(x0,y0,x1,y1,fill="#000000",outline="white")
+    canvas.create_text((x0+x1)/2, y0+(y1-y0)*0.2, fill='white', 
+    font=('Comic Sans MS', 20, 'bold italic'),
+    text= "Are you sure you want to quit?")
+    canvas.create_text((x0+x1)/2, y0+(y1-y0)*0.3, fill='white', 
+    font=('Comic Sans MS', 20, 'bold italic'),
+    text= "Your progress won't be saved.")
+
+    x0,y0,x1,y1 = app.yesButton
+    canvas.create_rectangle(x0,y0,x1,y1,fill="#00FF00",outline="white")
+    canvas.create_text((x0+x1)/2, (y1+y0)/2,fill='white', 
+    font=('Comic Sans MS', 20, 'bold italic'),text= "Yes")
+
+    x0,y0,x1,y1 = app.noButton
+    canvas.create_rectangle(x0,y0,x1,y1,fill="#FF0000",outline="white")
+    canvas.create_text((x0+x1)/2, (y1+y0)/2,fill='white', 
+    font=('Comic Sans MS', 20, 'bold italic'),text= "No")
+
+
 def gameMousePressed(app, event):
+    #When warning window is open
+    if (app.warningWindow):
+        x0,y0,x1,y1 = app.yesButton
+        if (event.x > x0 and event.x < x1 and event.y > y0 and event.y < y1):
+            app.state = 0
+            app.warningWindow = False
+        x0,y0,x1,y1 = app.noButton
+        if (event.x > x0 and event.x < x1 and event.y > y0 and event.y < y1):
+            app.warningWindow = False
+        return
+
+    #For when the game is continuing
     #The id of the player is always 0
     player = app.dict[0]
 

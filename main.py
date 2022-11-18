@@ -20,16 +20,28 @@ def appStarted(app):
                         app.width/2-5,app.height/2+110)
     app.settingsButton = (app.width/2+5,app.height/2+60,
                         app.width/2+120,app.height/2+110)
-    #gameInit(app)
+    app.warningWindow = False
+    app.backButton = (5,5,30,30)
+    settingsInit(app)
+    app.playerColor = "#0000FF"
+    app.playerName = "Player"
 
 def mousePressed(app, event):
     if (app.state == 0):
-        startScreenMousePressed(app, event)    
+        startScreenMousePressed(app, event)  
+    elif (app.state == 2):
+        settingsScreenSliderEvent(app, event)
+        changeName(app, event)
     elif (app.state == 3):
         gameMousePressed(app, event)
 
+    if (app.state != 0):
+        backButtonEvent(app,event)
+
 def mouseDragged(app, event):
-    if (app.state == 3):
+    if (app.state == 2):
+        settingsScreenSliderEvent(app, event)
+    elif (app.state == 3):
         gameMouseDragged(app, event)
 
 def mouseMoved(app, event):
@@ -41,18 +53,28 @@ def keyPressed(app, event):
         gameKeyPressed(app,event)
 
 def timerFired(app):
-    if (app.state == 3):
+    if (app.state == 3 and not app.warningWindow):
         gameTimerFired(app)
 
 def redrawAll(app, canvas):
     #MVC violation?
     if (app.state == 0):
         drawStartScreen(app, canvas)
+    elif(app.state == 1):
+        drawTutorialScreen(app,canvas)
+    elif(app.state == 2):
+        drawSettingsScreen(app,canvas)
     elif (app.state == 3):
         canvas.create_rectangle(0,0,800,800,fill="black")
         drawBoard(app, canvas)
         drawHud(app, canvas)
         drawLeaderBoard(app, canvas)
+    
+    if (app.warningWindow):
+        drawWarningWindow(app,canvas)
+
+    if (app.state != 0):
+        drawBackButton(app,canvas)
 
 def main():
     width, height = dimensions()
