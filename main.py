@@ -209,13 +209,12 @@ def keyPressed(app, event):
     #Zooming in and out, change cell size and bounds of board to be drawn
     #Keep the point the mouse is on invariant
 
-    #Zoom limit = 10x
+    #Zoom limit = 10x, for both in and out
     if(event.key == "w" and 
     (app.boardBottomRight[0]-app.boardTopLeft[0])*1.1 <= app.width*10):
         app.boardTopLeft, app.boardBottomRight = scale(app,1.1)
     if (event.key == "s"and 
     (app.boardBottomRight[0]-app.boardTopLeft[0])*0.9 >= app.width*0.1):
-        #Maximum zoom out is 1x
         app.boardTopLeft, app.boardBottomRight = scale(app,0.9)
 
 def timerFired(app):

@@ -29,9 +29,11 @@ class country:
         x = 0
         if (y < L):
             x = math.log(L/y - 1) / -k + a
-        #Update money
-        x += 1
-        self.growthRate = L/(1+math.exp(-k*(x-a)))/self.money
-        self.money = roundHalfUp(L/(1+math.exp(-k*(x-a)))) + self.size
+            x += 1
+            self.growthRate = L/(1+math.exp(-k*(x-a)))/self.money
+            self.money = roundHalfUp(L/(1+math.exp(-k*(x-a))))
+        else:
+            self.growthRate = 1
+        self.money += self.size
         self.money = min(self.size*1500, self.money)
     
