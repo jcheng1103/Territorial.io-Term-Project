@@ -22,14 +22,16 @@ def appStarted(app):
     app.mouseX = 0
     app.mouseY = 0
     app.hudHeight = app.height-app.cols*app.cellSize
+    app.showLeaderBoard = False
     #sliderBox is the coordinates for the bounding box of the attack slider
     app.sliderBox = (app.width*0.35,
                     app.cols*app.cellSize+app.hudHeight/2-app.hudHeight*0.3,
                     app.width*7/8,
                     app.cols*app.cellSize+app.hudHeight/2+app.hudHeight*0.3)
-    app.players = 1
+    app.players = 5
     app.defaultFill = "#1A1A1A"
-    app.countryColors = ["blue"] #To be expanded in the future
+    app.countryColors = ["blue","#ffff00","#00ff00","#00ffff","#ff0000"]
+    app.names = ["Player", "Bot 1", "Bot 2", "Bot 3", "Bot 4"]
     #Dictionary that supports using a country's integer id to find the
     #corrsponding country object
     app.dict = {}
@@ -47,15 +49,15 @@ def appStarted(app):
         while (app.board[row][col] == 0):
             row = random.randint(0,app.rows-1)
             col = random.randint(0,app.cols-1)
-        app.dict[i] = country(i,app.countryColors[i])
+        app.dict[i] = country(i,app.countryColors[i],app.names[i])
         app.board[row][col] = i
 
 def drawBoard(app,canvas):
     x0, y0 = app.boardTopLeft
     x1, y1 = app.boardBottomRight
-    canvas.create_rectangle(x0-10,y0-10,x1+10,y1+10,fill='white') #Map border
-    canvas.create_rectangle(x0,y0,x1,y1,fill=app.defaultFill,width=0)
     cSize = (app.boardBottomRight[0]-app.boardTopLeft[0])/app.cols
+    canvas.create_rectangle(x0-cSize,y0-cSize,x1+cSize,y1+cSize,fill='white') #Map border
+    canvas.create_rectangle(x0,y0,x1,y1,fill=app.defaultFill,width=0)
     for i in range(app.rows):
         for j in range(app.cols):
             id = app.board[i][j]
@@ -64,6 +66,35 @@ def drawBoard(app,canvas):
                 x1,y1=x0+cSize,y0+cSize
                 fill = app.dict[id].color
                 canvas.create_rectangle(x0,y0,x1,y1,fill=fill,outline=fill)
+
+def getCountrySize(a):
+        return a.size
+
+def drawLeaderBoard(app, canvas):
+    x0,y0,x1,y1=app.width*0.92,app.width*0.02,app.width*0.98,app.width*0.08
+    app.mouseX
+    if (not (app.mouseX>x0 and app.mouseX>y0 
+        and app.mouseX<x1 and app.mouseY<y1)):
+        canvas.create_rectangle(x0,y0,x1,y1,fill="black",outline="white")
+        return
+    x0,y0,x1,y1=app.width*0.7,app.width*0.02,app.width*0.98,app.width*0.4
+    canvas.create_rectangle(x0,y0,x1,y1,fill="black",outline="white")
+
+    tempL = []
+    for key in app.dict:
+        tempL.append(app.dict[key])
+    tempL.sort(key = getCountrySize)
+    x, y = app.width*0.84, app.width*0.02+10
+    font=('Comic Sans MS', 15, 'bold italic')
+    for i in range(app.players):
+        canvas.create_text(x-app.width*0.1, y, fill='white', font=font,
+        text=f'{i+1}.')
+        canvas.create_text(x, y, fill='white', font=font,
+        text=f'{tempL[i].name}')
+        canvas.create_text(x+app.width*0.1, y, fill='white', font=font,
+        text=f'{tempL[i].size}')
+        y += 20
+
 
 #Function to conver color int to hex value
 def hexRGB(n):
@@ -90,8 +121,18 @@ def drawHud(app,canvas):
     #The id of the player is always 0
     player = app.dict[0]
     font=('Comic Sans MS', 20, 'bold italic')
-    x, y = app.width/8, app.cellSize*app.cols+app.hudHeight/2
+    x, y = app.width/8, app.cellSize*app.cols+app.hudHeight*0.3
     canvas.create_text(x, y, text=f'{player.money}', fill='green', font=font)
+
+    #Displaying growth rate
+    font=('Comic Sans MS', 15, 'bold italic')
+    y = app.cellSize*app.cols+app.hudHeight*0.6
+    canvas.create_text(x, y, fill='black', font=font,
+    text=f'Interest rate: {str(round((player.growthRate-1)*100,2))}%')
+    font=('Comic Sans MS', 15, 'bold italic')
+    y = app.cellSize*app.cols+app.hudHeight*0.75
+    canvas.create_text(x, y, fill='black', font=font,
+    text=f'Income: {player.size}')
 
     #Displaying slider
     x0,y0,x1,y1 = app.sliderBox
@@ -128,6 +169,9 @@ def mousePressed(app, event):
     if (event.x > x1 and event.x < x1+(y1-y0) and 
     event.y > y0 and event.y < y1):
         player.attackProportion += 0.05
+    #Restrict proportion to between 0 and 1
+    player.attackProportion = min(player.attackProportion,1.0)
+    player.attackProportion = max(player.attackProportion,0)
 
 def mouseDragged(app, event):
     player = app.dict[0]
@@ -182,6 +226,7 @@ def redrawAll(app, canvas):
     canvas.create_rectangle(0,0,800,800,fill="black")
     drawBoard(app, canvas)
     drawHud(app, canvas)
+    drawLeaderBoard(app, canvas)
 
 def runGame():
     width, height = dimensions()
