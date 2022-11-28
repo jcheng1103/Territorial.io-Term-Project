@@ -99,7 +99,6 @@ def drawSettingsScreen(app, canvas):
 
 def settingsScreenSliderEvent(app, event):
     #If drag is within 3 sliders
-    #app.getUserInput("Test")
     x0,y0,x1,y1 = app.rSlider
     if (event.x > x0 and event.x < x1 and event.y > y0 and event.y < y1):
         app.rVal = int((event.x-x0)/(x1-x0)*255)
@@ -116,8 +115,11 @@ def changeName(app, event):
     x0,y0,x1,y1 = app.nameChangeButton
     if (event.x > x0 and event.x < x1 and event.y > y0 and event.y < y1):
         temp = app.getUserInput("Enter name:")
-        while (len(temp) > 20):
-            temp = app.getUserInput("Name is too long, please enter again:")
+        while (len(temp) > 20 or len(temp) == 0):
+            if (len(temp) == 0):
+                temp =app.getUserInput("Name is too short, please enter again:")
+            else:
+                temp = app.getUserInput("Name is too long, please enter again:")
         app.playerName = temp
 
 def drawBackButton(app, canvas):

@@ -1,6 +1,7 @@
 import math, copy, random
 from cmu_112_graphics import *
 from countryObject import *
+from gameAI import *
 
 def gameInit(app):
     app.timerDelay = 500
@@ -40,7 +41,6 @@ def gameInit(app):
     for i in range(app.rows):
         app.board.append([-1]*app.cols)
 
-    #Add countries in at random positions (1 for now)
     for i in range(app.players):
         row = random.randint(0,app.rows-1)
         col = random.randint(0,app.cols-1)
@@ -63,7 +63,9 @@ def drawBoard(app,canvas):
             if (id != -1):
                 x0,y0=i*cSize+app.boardTopLeft[0],j*cSize+app.boardTopLeft[1]
                 x1,y1=x0+cSize,y0+cSize
-                fill = app.dict[id].color
+                fill = app.defaultFill
+                if (id in app.dict):
+                    fill = app.dict[id].color
                 canvas.create_rectangle(x0,y0,x1,y1,fill=fill,outline=fill)
 
 def getCountrySize(a):
@@ -82,14 +84,14 @@ def drawLeaderBoard(app, canvas):
     tempL = []
     for key in app.dict:
         tempL.append(app.dict[key])
-    tempL.sort(key = getCountrySize)
+    tempL.sort(key = getCountrySize,reverse = True)
     x, y = app.width*0.84, app.width*0.02+10
     canvas.create_text(x, y, fill='white', 
     font=('Comic Sans MS', 20, 'bold italic'), text="Leaderboard")
     canvas.create_line(x0,y0+20,x1,y0+20, fill = "white",width = 1)
     y = app.width*0.02+30
     font=('Comic Sans MS', 15, 'italic')
-    for i in range(app.players):
+    for i in range(len(app.dict)):
         canvas.create_text(x-app.width*0.1, y, fill='white', font=font,
         text=f'{i+1}.')
         canvas.create_text(x, y, fill=tempL[i].color, font=font,
@@ -177,6 +179,13 @@ def drawWarningWindow(app, canvas):
     canvas.create_text((x0+x1)/2, (y1+y0)/2,fill='white', 
     font=('Comic Sans MS', 20, 'bold italic'),text= "No")
 
+def unScale(app, event):
+    width = (app.boardBottomRight[0]-app.boardTopLeft[0])
+    i = int((event.x-app.boardTopLeft[0])/width*app.cols)
+    j = int((event.y-app.boardTopLeft[1])/width*app.rows)
+    if (i>=0 and i<=app.rows and j>=0 and j<=app.cols):
+        return app.board[i][j]
+    return None
 
 def gameMousePressed(app, event):
     #When warning window is open
@@ -208,6 +217,12 @@ def gameMousePressed(app, event):
     #Restrict proportion to between 0 and 1
     player.attackProportion = min(player.attackProportion,1.0)
     player.attackProportion = max(player.attackProportion,0)
+
+    if (event.y < app.height-app.hudHeight):
+        id = unScale(app,event)
+        if (id != None):
+            player.attackInit(app,id,
+            int(player.attackProportion*player.money))
 
 def gameMouseDragged(app, event):
     player = app.dict[0]
@@ -250,5 +265,15 @@ def gameKeyPressed(app,event):
         app.boardTopLeft, app.boardBottomRight = scale(app,0.9)
 
 def gameTimerFired(app):
+    L = []
     for key in app.dict:
-            app.dict[key].updateMoney()
+        L.append(key)
+    for key in L:
+        if (app.dict[key].size <= 0):
+            del app.dict[key]
+            print(key)
+            continue
+        app.dict[key].updateMoney()
+        if (key != 0):
+            runAi(app,app.dict[key])
+        app.dict[key].incrementAttacks(app)

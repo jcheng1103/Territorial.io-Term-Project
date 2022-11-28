@@ -1,8 +1,13 @@
-import math, copy, random
+"""Run this file to start the game"""
+
 from cmu_112_graphics import *
 from countryObject import *
 from gameFuncs import *
 from menuFuncs import *
+
+
+"""Fixed bug which breaks panning if mouseDragged is called before mouseMoved 
+(mouseX and mouseY aren't initizalized)"""
 
 #returns width, hight
 #There isn't support for changing the window size yet
@@ -27,6 +32,11 @@ def appStarted(app):
     app.playerName = "Player"
 
 def mousePressed(app, event):
+    app.mouseX = event.x
+    app.mouseY = event.y
+    if (app.state != 0):
+        backButtonEvent(app,event)
+    
     if (app.state == 0):
         startScreenMousePressed(app, event)  
     elif (app.state == 2):
@@ -34,9 +44,6 @@ def mousePressed(app, event):
         changeName(app, event)
     elif (app.state == 3):
         gameMousePressed(app, event)
-
-    if (app.state != 0):
-        backButtonEvent(app,event)
 
 def mouseDragged(app, event):
     if (app.state == 2):
@@ -49,6 +56,11 @@ def mouseMoved(app, event):
     app.mouseY = event.y
 
 def keyPressed(app, event):
+    if (event.key == "Escape"):
+        if (app.state == 1 or app.state == 2):
+            app.state = 0
+        elif (app.state == 3):
+            app.warningWindow = True
     if (app.state == 3):
         gameKeyPressed(app,event)
 
