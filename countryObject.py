@@ -67,9 +67,9 @@ class country:
                 return
 
         self.money -= committed
-        searchQueue = deque()
+        searchQueue = []
         neighbours = 0
-        density = 1.0
+        density = 5.0
         if (id != -1):
             density = app.dict[id].money/app.dict[id].size
         for i in range(len(app.board)):
@@ -102,36 +102,34 @@ class country:
                 committed-roundHalfUp(len(searchQueue)*density), committed))
         
     def incrementAttacks(self, app):
-        j = 0
+        index = 0
         for i in self.attacks:
             id = i[1]
             if (id != -1 and (id not in app.dict or app.dict[id].size <= 0)):
-                self.attacks.pop(j)
+                self.attacks.pop(index)
                 continue
             #Search for next depth
-            searchQueue = copy.copy(i[0])
-            density = 1.0
+            density = 5.0
             if (id != -1):
                 density = app.dict[id].money/app.dict[id].size
             newlyAdded = []
             money = i[2]
-            #Find neighbours to all tiles in searchQueue
-            while (len(searchQueue) > 0):
-                front = searchQueue.popleft()
-                if (not front[0]-1 < 0 and app.board[front[0]-1][front[1]]==id):
-                    app.board[front[0]-1][front[1]] = self.id
-                    newlyAdded.append((front[0]-1,front[1]))
-                if (not front[0]+1 >= len(app.board) and
-                app.board[front[0]+1][front[1]] == id):
-                    app.board[front[0]+1][front[1]] = self.id
-                    newlyAdded.append((front[0]+1,front[1]))
-                if (not front[1]-1 < 0 and app.board[front[0]][front[1]-1]==id):
-                    app.board[front[0]][front[1]-1] = self.id
-                    newlyAdded.append((front[0],front[1]-1))
-                if (not front[1]+1 >= len(app.board[0]) and
-                app.board[front[0]][front[1]+1] == id):
-                    app.board[front[0]][front[1]+1] = self.id
-                    newlyAdded.append((front[0],front[1]+1))
+            #Find all tiles to be conquered that neighbor the tiles in the current queue
+            for j in i[0]:
+                if (not j[0]-1 < 0 and app.board[j[0]-1][j[1]]==id):
+                    app.board[j[0]-1][j[1]] = self.id
+                    newlyAdded.append((j[0]-1,j[1]))
+                if (not j[0]+1 >= len(app.board) and
+                app.board[j[0]+1][j[1]] == id):
+                    app.board[j[0]+1][j[1]] = self.id
+                    newlyAdded.append((j[0]+1,j[1]))
+                if (not j[1]-1 < 0 and app.board[j[0]][j[1]-1]==id):
+                    app.board[j[0]][j[1]-1] = self.id
+                    newlyAdded.append((j[0],j[1]-1))
+                if (not j[1]+1 >= len(app.board[0]) and
+                app.board[j[0]][j[1]+1] == id):
+                    app.board[j[0]][j[1]+1] = self.id
+                    newlyAdded.append((j[0],j[1]+1))
                 #If the attack has run out of money
                 if (len(newlyAdded)*density>money):
                     break
@@ -140,22 +138,22 @@ class country:
                 #Replace modified tiles
                 for i in newlyAdded:
                     app.board[i[0]][i[1]] = id
-                self.attacks.pop(j)
+                self.attacks.pop(index)
                 if (id != -1):
                     app.dict[id].money -= money
             elif (len(newlyAdded) == 0):
                 #Attack has terminated because there is no land to conquer
                 #Remaining money is refunded
                 self.money += i[2]
-                self.attacks.pop(j)
+                self.attacks.pop(index)
             else:
                 #Update queue
-                self.attacks[j] = (deque(newlyAdded), id,
+                self.attacks[index] = (newlyAdded, id,
                 money-roundHalfUp(len(newlyAdded)*density), i[3])
                 self.size += len(newlyAdded)
                 if (id != -1):
                     app.dict[id].size -= len(newlyAdded)
                     app.dict[id].money -= roundHalfUp(len(newlyAdded)*density)
-            j += 1
+            index += 1
 
 

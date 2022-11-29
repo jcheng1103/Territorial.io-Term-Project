@@ -17,7 +17,7 @@ def runAi(app, agent):
     s = findNeighbours(app, agent)
     #If there is still empty space and agent has some threshold of money
     if (-1 in s):
-        if (agent.money > random.randint(agent.size*10,agent.size*200)):
+        if (agent.money > random.randint(agent.size*10,agent.size*50)):
             agent.attackInit(app,-1,int(agent.money*agent.aggro))
         return
 
@@ -28,7 +28,6 @@ def runAi(app, agent):
     #Find smallest neighbour
     smallest = None 
     for i in s:
-        print("i", i)
         if (smallest == None or app.dict[i].money < app.dict[smallest].money):
             smallest = i
     

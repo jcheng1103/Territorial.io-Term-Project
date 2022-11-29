@@ -32,8 +32,9 @@ def appStarted(app):
     app.playerName = "Player"
 
 def mousePressed(app, event):
-    app.mouseX = event.x
-    app.mouseY = event.y
+    app.mouseX, app.mouseY = event.x, event.y
+    app.mousePressedX, app.mousePressedY = event.x, event.y
+
     if (app.state != 0):
         backButtonEvent(app,event)
     
@@ -44,6 +45,10 @@ def mousePressed(app, event):
         changeName(app, event)
     elif (app.state == 3):
         gameMousePressed(app, event)
+
+def mouseReleased(app, event):
+    if (app.state == 3):
+        gameMouseReleased(app, event)
 
 def mouseDragged(app, event):
     if (app.state == 2):

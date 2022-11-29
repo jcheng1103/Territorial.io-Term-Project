@@ -218,6 +218,14 @@ def gameMousePressed(app, event):
     player.attackProportion = min(player.attackProportion,1.0)
     player.attackProportion = max(player.attackProportion,0)
 
+def gameMouseReleased(app, event):
+    #Checking if an attack is taking place
+    #If statement checks to see if the mouse was being dragged
+    print('a')
+    if (app.mousePressedX - event.x > 10 and app.mousePressedX - event.y > 10):
+        return
+    print('b')
+    player = app.dict[0]
     if (event.y < app.height-app.hudHeight):
         id = unScale(app,event)
         if (id != None):
