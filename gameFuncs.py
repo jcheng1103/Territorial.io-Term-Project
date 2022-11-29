@@ -1,7 +1,8 @@
 import math, copy, random
 from cmu_112_graphics import *
-from countryObject import *
+from countryClass import *
 from gameAI import *
+from buttonClass import *
 
 def gameInit(app):
     app.timerDelay = 500
@@ -21,13 +22,19 @@ def gameInit(app):
                     app.cols*app.cellSize+app.hudHeight/2-app.hudHeight*0.3,
                     app.width*7/8,
                     app.cols*app.cellSize+app.hudHeight/2+app.hudHeight*0.3)
+    x0,y0,x1,y1 = app.sliderBox
+    app.minusButton = button((x0-(y1-y0),y0,x0,y1),fill="#303030",
+    outline="#A0A0A0",font=('Comic Sans MS', 40, 'bold italic'))
+    app.plusButton = button((x1,y0,x1+(y1-y0),y1,),fill="#303030",
+    outline="#A0A0A0",font=('Comic Sans MS', 40, 'bold italic'))
     app.warningWindowDims = (app.width/2-200,app.width/2-150,
                         app.width/2+200,app.width/2+150)
     x0,y0,x1,y1 = app.warningWindowDims
-    app.yesButton = (x0+(x1-x0)*0.1,y0+(y1-y0)*0.7,
-                    x0+(x1-x0)*0.3,y0+(y1-y0)*0.85)
-    app.noButton = (x0+(x1-x0)*0.7,y0+(y1-y0)*0.7,
-                    x0+(x1-x0)*0.9,y0+(y1-y0)*0.85)
+    font=('Comic Sans MS', 20, 'bold italic')
+    app.yesButton = button((x0+(x1-x0)*0.1,y0+(y1-y0)*0.7,
+                    x0+(x1-x0)*0.3,y0+(y1-y0)*0.85),"#00FF00","white",font)
+    app.noButton = button((x0+(x1-x0)*0.7,y0+(y1-y0)*0.7,
+                    x0+(x1-x0)*0.9,y0+(y1-y0)*0.85),"#FF0000","white",font)
     app.players = 5
     app.defaultFill = "#1A1A1A"
     app.countryColors = [app.playerColor,"#ffff00","#00ff00","#00ffff","#ff0000"]
@@ -74,6 +81,7 @@ def getCountrySize(a):
 def drawLeaderBoard(app, canvas):
     x0,y0,x1,y1=app.width*0.92,app.width*0.02,app.width*0.98,app.width*0.08
     app.mouseX
+    #Only draw leaderboard if mouse is in the top left corner
     if (not (app.mouseX>x0 and app.mouseX>y0 
         and app.mouseX<x1 and app.mouseY<y1)):
         canvas.create_rectangle(x0,y0,x1,y1,fill="black",outline="white")
@@ -81,10 +89,13 @@ def drawLeaderBoard(app, canvas):
     x0,y0,x1,y1=app.width*0.7,app.width*0.02,app.width*0.98,app.width*0.4
     canvas.create_rectangle(x0,y0,x1,y1,fill="black",outline="white")
 
+    #Make a list of all countries sorted by size
     tempL = []
     for key in app.dict:
         tempL.append(app.dict[key])
     tempL.sort(key = getCountrySize,reverse = True)
+
+    #Draw leaderboard
     x, y = app.width*0.84, app.width*0.02+10
     canvas.create_text(x, y, fill='white', 
     font=('Comic Sans MS', 20, 'bold italic'), text="Leaderboard")
@@ -149,15 +160,8 @@ def drawHud(app,canvas):
     fill='white', font=font)
 
     #Slider buttons
-    font=('Comic Sans MS', 40, 'bold italic')
-    canvas.create_rectangle(x0-(y1-y0),y0,x0,y1,
-    outline="#A0A0A0",fill="#303030")
-    canvas.create_text(x0-(y1-y0)/2, (y0+y1)/2, text='-', 
-    fill='white', font=font)
-    canvas.create_rectangle(x1,y0,x1+(y1-y0),y1,
-    outline="#A0A0A0",fill="#303030")
-    canvas.create_text(x1+(y1-y0)/2, (y0+y1)/2, text='+', 
-    fill='white', font=font)
+    app.minusButton.draw(canvas,"-")
+    app.plusButton.draw(canvas,"+")
 
 def drawWarningWindow(app, canvas):
     x0,y0,x1,y1 = app.warningWindowDims
@@ -169,15 +173,9 @@ def drawWarningWindow(app, canvas):
     font=('Comic Sans MS', 20, 'bold italic'),
     text= "Your progress won't be saved.")
 
-    x0,y0,x1,y1 = app.yesButton
-    canvas.create_rectangle(x0,y0,x1,y1,fill="#00FF00",outline="white")
-    canvas.create_text((x0+x1)/2, (y1+y0)/2,fill='white', 
-    font=('Comic Sans MS', 20, 'bold italic'),text= "Yes")
-
-    x0,y0,x1,y1 = app.noButton
-    canvas.create_rectangle(x0,y0,x1,y1,fill="#FF0000",outline="white")
-    canvas.create_text((x0+x1)/2, (y1+y0)/2,fill='white', 
-    font=('Comic Sans MS', 20, 'bold italic'),text= "No")
+    app.yesButton.draw(canvas,"Yes")
+    app.noButton.draw(canvas,"No")
+    return
 
 def unScale(app, event):
     width = (app.boardBottomRight[0]-app.boardTopLeft[0])
@@ -190,12 +188,10 @@ def unScale(app, event):
 def gameMousePressed(app, event):
     #When warning window is open
     if (app.warningWindow):
-        x0,y0,x1,y1 = app.yesButton
-        if (event.x > x0 and event.x < x1 and event.y > y0 and event.y < y1):
+        if (app.yesButton.checkBounds(event)):
             app.state = 0
             app.warningWindow = False
-        x0,y0,x1,y1 = app.noButton
-        if (event.x > x0 and event.x < x1 and event.y > y0 and event.y < y1):
+        if (app.noButton.checkBounds(event)):
             app.warningWindow = False
         return
 
@@ -208,11 +204,9 @@ def gameMousePressed(app, event):
     if (event.x > x0 and event.x < x1 and event.y > y0 and event.y < y1):
         player.attackProportion = (event.x-x0)/(x1-x0)
     #When slider buttons are clicked
-    if (event.x > x0-(y1-y0) and event.x < x0 and 
-    event.y > y0 and event.y < y1):
+    if (app.minusButton.checkBounds(event)):
         player.attackProportion -= 0.05
-    if (event.x > x1 and event.x < x1+(y1-y0) and 
-    event.y > y0 and event.y < y1):
+    if (app.plusButton.checkBounds(event)):
         player.attackProportion += 0.05
     #Restrict proportion to between 0 and 1
     player.attackProportion = min(player.attackProportion,1.0)
@@ -221,10 +215,9 @@ def gameMousePressed(app, event):
 def gameMouseReleased(app, event):
     #Checking if an attack is taking place
     #If statement checks to see if the mouse was being dragged
-    print('a')
     if (app.mousePressedX - event.x > 10 and app.mousePressedX - event.y > 10):
         return
-    print('b')
+    
     player = app.dict[0]
     if (event.y < app.height-app.hudHeight):
         id = unScale(app,event)

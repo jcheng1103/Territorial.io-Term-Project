@@ -1,13 +1,9 @@
 """Run this file to start the game"""
 
 from cmu_112_graphics import *
-from countryObject import *
+from countryClass import *
 from gameFuncs import *
 from menuFuncs import *
-
-
-"""Fixed bug which breaks panning if mouseDragged is called before mouseMoved 
-(mouseX and mouseY aren't initizalized)"""
 
 #returns width, hight
 #There isn't support for changing the window size yet
@@ -19,14 +15,17 @@ def dimensions():
 def appStarted(app):
     app.width, app.height = dimensions()
     app.state = 0 #0 = start screen, 1 = tutorial, 2 = settings, 3 = game
-    app.startButton = (app.width/2-120,app.height/2-50,
-                        app.width/2+120,app.height/2+50)
-    app.tutorialButton = (app.width/2-120,app.height/2+60,
-                        app.width/2-5,app.height/2+110)
-    app.settingsButton = (app.width/2+5,app.height/2+60,
-                        app.width/2+120,app.height/2+110)
+    app.startButton = button((app.width/2-120,app.height/2-50,
+                        app.width/2+120,app.height/2+50),"#32c837",None,
+                        ('Comic Sans MS', 40, 'bold italic'))
+    font=('Comic Sans MS', 20, 'bold italic')
+    app.tutorialButton = button((app.width/2-120,app.height/2+60,
+                        app.width/2-5,app.height/2+110),"blue",None,font)
+    app.settingsButton = button((app.width/2+5,app.height/2+60,
+                        app.width/2+120,app.height/2+110),"red",None,font)
     app.warningWindow = False
-    app.backButton = (5,5,30,30)
+    app.backButton= button((5,5,30,30),"#FF0000","white",
+    ('Comic Sans MS', 30, 'bold italic'))
     settingsInit(app)
     app.playerColor = "#0000FF"
     app.playerName = "Player"
@@ -74,7 +73,6 @@ def timerFired(app):
         gameTimerFired(app)
 
 def redrawAll(app, canvas):
-    #MVC violation?
     if (app.state == 0):
         drawStartScreen(app, canvas)
     elif(app.state == 1):

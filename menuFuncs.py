@@ -9,43 +9,20 @@ def drawStartScreen(app, canvas):
     canvas.create_text(app.width/2, app.height*0.3, text='Territorial.io', 
     fill='white', font=('Comic Sans MS', 50, 'bold italic'))
 
-    #Start button
-    x0,y0,x1,y1 = app.startButton
-    canvas.create_rectangle(x0,y0,x1,y1,
-    fill="#32c837")
-    font=('Comic Sans MS', 40, 'bold italic')
-    canvas.create_text((x1+x0)/2, (y1+y0)/2, text='Start Game', 
-    fill='white', font=font)
-
-    #Tutorial button
-    x0,y0,x1,y1 = app.tutorialButton
-    canvas.create_rectangle(x0,y0,x1,y1,
-    fill="blue")
-    font=('Comic Sans MS', 20, 'bold italic')
-    canvas.create_text((x1+x0)/2, (y1+y0)/2, text='Tutorial', 
-    fill='white', font=font)
-
-    #Settings button
-    x0,y0,x1,y1 = app.settingsButton
-    canvas.create_rectangle(x0,y0,x1,y1,
-    fill="red")
-    font=('Comic Sans MS', 20, 'bold italic')
-    canvas.create_text((x1+x0)/2, (y1+y0)/2, text='Settings', 
-    fill='white', font=font)
+    app.startButton.draw(canvas,"Start Game")
+    app.tutorialButton.draw(canvas,"Tutorial")
+    app.settingsButton.draw(canvas,"Settings")
 
 def startScreenMousePressed(app, event):
     #If click is within startButton bounds
-    x0,y0,x1,y1 = app.startButton
-    if (event.x > x0 and event.x < x1 and event.y > y0 and event.y < y1):
+    if (app.startButton.checkBounds(event)):
         app.state = 3
         gameInit(app)
     #If click is within tutorialButton bounds
-    x0,y0,x1,y1 = app.tutorialButton
-    if (event.x > x0 and event.x < x1 and event.y > y0 and event.y < y1):
+    if (app.tutorialButton.checkBounds(event)):
         app.state = 1
     #If click is within settingsButton bounds
-    x0,y0,x1,y1 = app.settingsButton
-    if (event.x > x0 and event.x < x1 and event.y > y0 and event.y < y1):
+    if (app.settingsButton.checkBounds(event)):
         app.state = 2
     
 def settingsInit(app):
@@ -123,14 +100,11 @@ def changeName(app, event):
         app.playerName = temp
 
 def drawBackButton(app, canvas):
-    x0,y0,x1,y1 = app.backButton
-    canvas.create_rectangle(x0,y0,x1,y1,fill="#FF0000",outline="white")
-    canvas.create_text((x0+x1)/2, (y0+y1)/2-4, fill="white", 
-    font=('Comic Sans MS', 30, 'bold italic'), text="x")
+    app.backButton.draw(canvas,"x",(0,-4))
+    return
 
 def backButtonEvent(app, event):
-    x0,y0,x1,y1 = app.backButton
-    if (event.x > x0 and event.x < x1 and event.y > y0 and event.y < y1):
+    if (app.backButton.checkBounds(event)):
         if (app.state != 3):
             app.state = 0
         else:
