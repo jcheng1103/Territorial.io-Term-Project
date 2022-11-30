@@ -67,6 +67,13 @@ def gameInit(app):
         app.dict[i] = country(i,app.countryColors[i],app.names[i])
         app.board[row][col] = i
 
+#Finds the position to draw something on canvas based on position in game board
+def boardToDisplay(app,row,col):
+    width = app.boardBottomRight[0] - app.boardTopLeft[0]
+    x = app.boardTopLeft[0] + col * width / app.cols
+    y = app.boardTopLeft[1] + row * width / app.rows
+    return x,y
+
 def drawBoard(app,canvas):
     x0, y0 = app.boardTopLeft
     x1, y1 = app.boardBottomRight
@@ -77,13 +84,15 @@ def drawBoard(app,canvas):
         for j in range(app.cols):
             id = app.board[i][j]
             if (id != -1):
-                x0,y0=j*cSize+app.boardTopLeft[0],i*cSize+app.boardTopLeft[1]
-                x1,y1=x0+cSize,y0+cSize
+                #x0,y0=j*cSize+app.boardTopLeft[0],i*cSize+app.boardTopLeft[1]
+                #x1,y1=x0+cSize,y0+cSize
+                x0,y0=boardToDisplay(app,i,j)
+                x1,y1=boardToDisplay(app,i+1,j+1)
                 fill = app.defaultFill
                 if (id in app.dict):
                     fill = app.dict[id].color
                 canvas.create_rectangle(x0,y0,x1,y1,fill=fill,outline=fill)
-    #drawNames(app,canvas)
+    drawNames(app,canvas)
 
 def getCountrySize(a):
         return a.size
@@ -187,19 +196,65 @@ def drawWarningWindow(app, canvas):
     app.noButton.draw(canvas,"No")
     return
 
-#Finds the position to draw something on canvas based on position in game board
-def boardToDisplay(app,row,col):
-    width = app.boardBottomRight[0] - app.boardTopLeft[0]
-    x = app.boardTopLeft[0] + col * width / app.cols
-    y = app.boardTopLeft[1] + row * width / app.rows
-    return x,y
-
-"""
 def drawNames(app, canvas):
+    #Calculating the prefix sum of borders
+    for key in app.dict:
+        app.dict[key].maxWidth = 0
+        app.dict[key].row = -1
+        app.dict[key].col = -1
+    borders = []
+    for i in range(len(app.board)):
+        borders.append([0]*len(app.board[0]))
+
+    for i in range(len(app.board)):
+        for j in range(1,len(app.board[0])):
+            borders[i][j] += borders[i][j-1]
+            if (app.board[i][j] != app.board[i][j-1]):
+                borders[i][j] += 1
+    
+    for i in range(len(app.board[0])):
+        for j in range(len(app.board)):
+            borders[j][i] += borders[j-1][i]
+            if (app.board[j][i] != app.board[j-1][i]):
+                borders[j][i] += 1
+
     for i in range(len(app.board)):
         for j in range(len(app.board[0])):
             #For top left corner what is the biggest possible text box?
-"""
+            if (app.board[i][j] == -1):
+                continue #To avoid evaluating empty space
+            current = app.dict[app.board[i][j]]
+            #Bottom right coordinates
+            i1, j1=int(i+current.maxWidth*current.ratio),int(j+current.maxWidth)
+            if (current.row == -1):
+                current.row = i
+                current.col = j
+            while (i1 < len(app.board) and j1 < len(app.board[0]) and 
+            app.board[i][j] == app.board[i1][j1] and
+            borders[i1][j1]-borders[i1][j]-borders[i][j1]+borders[i][j] == 0):
+                current.maxWidth += 1
+                current.row = i
+                current.col = j
+                i1, j1 = int(i+current.maxWidth*current.ratio),int(j+current.maxWidth)
+    
+    for key in app.dict:
+        drawName(app,app.dict[key],canvas)
+
+def drawName(app,current,canvas):
+    x,y = boardToDisplay(app,current.row+0.5,current.col+current.maxWidth/2)
+    textLength = max(len(current.name),len(str(current.money)))
+    widthPerLetter = current.maxWidth / textLength
+    fontSize = roundHalfUp(widthPerLetter * 0.01 * (app.boardBottomRight[0] - app.boardTopLeft[0]))
+    if (fontSize < 6):
+        return
+    fill = "white"
+    color = current.color #Color of the country
+    if (((int(color[1:3],base=16)+int(color[3:5],base=16)+int(color[5:],base=16))/3)>80):
+        fill = "black" #adjusts text color if white text will be too difficult to see
+    canvas.create_text(x, y+fontSize*0.5, fill=fill, 
+    font=('Comic Sans MS', fontSize, 'bold italic'), text=current.name)
+    canvas.create_text(x, y+fontSize*1.5, fill=fill, text=f"{current.money}",
+    font=('Comic Sans MS', fontSize, 'bold italic'))
 
 def unScale(app, event):
     width = (app.boardBottomRight[0]-app.boardTopLeft[0])

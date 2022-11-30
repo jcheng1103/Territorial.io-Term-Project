@@ -27,9 +27,10 @@ class country:
         self.aggro = random.randint(10,30)/100 #How much bots attack with
 
         #For drawing name
-        self.ratio = len(self.name)*1.4 #ratio of width/height
-        self.topLeft = None
-        self.bottomRight = None
+        self.ratio = 2.4 / max(len(self.name),len(str(self.money))) #ratio of height/width
+        self.maxWidth = 0
+        self.row = -1
+        self.col = -1
     
     #Logistic equation: f(x) = L/(1+e**-k(x-a))
     # x = ln(L/f(x)-1)/-k + a
