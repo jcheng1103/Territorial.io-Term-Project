@@ -4,6 +4,13 @@ from countryClass import *
 from gameAI import *
 from buttonClass import *
 
+def roundHalfUp(d): #helper-fn
+    # Round to nearest with ties going away from zero.
+    rounding = decimal.ROUND_HALF_UP
+    # See other rounding options here:
+    # https://docs.python.org/3/library/decimal.html#rounding-modes
+    return int(decimal.Decimal(d).to_integral_value(rounding=rounding))
+
 def gameInit(app):
     app.timerDelay = 500
     app.cellSize = 10
@@ -15,6 +22,7 @@ def gameInit(app):
     app.boardBottomRight = (app.width,app.width)
     app.mouseX = 0
     app.mouseY = 0
+    app.mouseWasDragged = True
     app.hudHeight = app.height-app.cols*app.cellSize
     app.showLeaderBoard = False
         #sliderBox is the coordinates for the bounding box of the attack slider
@@ -35,6 +43,7 @@ def gameInit(app):
                     x0+(x1-x0)*0.3,y0+(y1-y0)*0.85),"#00FF00","white",font)
     app.noButton = button((x0+(x1-x0)*0.7,y0+(y1-y0)*0.7,
                     x0+(x1-x0)*0.9,y0+(y1-y0)*0.85),"#FF0000","white",font)
+    app.gameOver = False
     app.players = 5
     app.defaultFill = "#1A1A1A"
     app.countryColors = [app.playerColor,"#ffff00","#00ff00","#00ffff","#ff0000"]
@@ -68,12 +77,13 @@ def drawBoard(app,canvas):
         for j in range(app.cols):
             id = app.board[i][j]
             if (id != -1):
-                x0,y0=i*cSize+app.boardTopLeft[0],j*cSize+app.boardTopLeft[1]
+                x0,y0=j*cSize+app.boardTopLeft[0],i*cSize+app.boardTopLeft[1]
                 x1,y1=x0+cSize,y0+cSize
                 fill = app.defaultFill
                 if (id in app.dict):
                     fill = app.dict[id].color
                 canvas.create_rectangle(x0,y0,x1,y1,fill=fill,outline=fill)
+    #drawNames(app,canvas)
 
 def getCountrySize(a):
         return a.size
@@ -177,15 +187,31 @@ def drawWarningWindow(app, canvas):
     app.noButton.draw(canvas,"No")
     return
 
+#Finds the position to draw something on canvas based on position in game board
+def boardToDisplay(app,row,col):
+    width = app.boardBottomRight[0] - app.boardTopLeft[0]
+    x = app.boardTopLeft[0] + col * width / app.cols
+    y = app.boardTopLeft[1] + row * width / app.rows
+    return x,y
+
+"""
+def drawNames(app, canvas):
+    for i in range(len(app.board)):
+        for j in range(len(app.board[0])):
+            #For top left corner what is the biggest possible text box?
+"""
+
 def unScale(app, event):
     width = (app.boardBottomRight[0]-app.boardTopLeft[0])
-    i = int((event.x-app.boardTopLeft[0])/width*app.cols)
-    j = int((event.y-app.boardTopLeft[1])/width*app.rows)
+    j = int((event.x-app.boardTopLeft[0])/width*app.cols)
+    i = int((event.y-app.boardTopLeft[1])/width*app.rows)
     if (i>=0 and i<=app.rows and j>=0 and j<=app.cols):
         return app.board[i][j]
     return None
 
 def gameMousePressed(app, event):
+    app.mouseWasDragged = False
+
     #When warning window is open
     if (app.warningWindow):
         if (app.yesButton.checkBounds(event)):
@@ -215,7 +241,7 @@ def gameMousePressed(app, event):
 def gameMouseReleased(app, event):
     #Checking if an attack is taking place
     #If statement checks to see if the mouse was being dragged
-    if (app.mousePressedX - event.x > 10 and app.mousePressedX - event.y > 10):
+    if (app.mouseWasDragged):
         return
     
     player = app.dict[0]
@@ -227,6 +253,7 @@ def gameMouseReleased(app, event):
 
 def gameMouseDragged(app, event):
     player = app.dict[0]
+    app.mouseWasDragged = True
     #When player drags mouse across slider
     x0,y0,x1,y1 = app.sliderBox
     if (event.x > x0 and event.x < x1 and event.y > y0 and event.y < y1):
@@ -272,9 +299,12 @@ def gameTimerFired(app):
     for key in L:
         if (app.dict[key].size <= 0):
             del app.dict[key]
-            print(key)
             continue
         app.dict[key].updateMoney()
         if (key != 0):
             runAi(app,app.dict[key])
         app.dict[key].incrementAttacks(app)
+
+    if (0 not in app.dict or len(app.dict) == 1):
+        app.gameOver = True
+        app.state = 0

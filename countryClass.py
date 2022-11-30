@@ -1,7 +1,6 @@
 import math
 import decimal
 from collections import deque
-import copy
 import random
 
 def roundHalfUp(d): #helper-fn
@@ -16,7 +15,7 @@ class country:
         self.id = id #corresponding int on board
         self.color = color #fill color on board
         self.name = name
-        self.money = 100
+        self.money = 200
         self.size = 1
         self.attackProportion = 0.3 #Must be between 0 and 1 inclusive
         self.growthRate = 0.0
@@ -27,6 +26,10 @@ class country:
         self.tooBig = random.randint(3,10) #Bots won't attack if the difference is too big
         self.aggro = random.randint(10,30)/100 #How much bots attack with
 
+        #For drawing name
+        self.ratio = len(self.name)*1.4 #ratio of width/height
+        self.topLeft = None
+        self.bottomRight = None
     
     #Logistic equation: f(x) = L/(1+e**-k(x-a))
     # x = ln(L/f(x)-1)/-k + a
