@@ -62,7 +62,8 @@ class country:
 
     #initializing queue for dfs
     def attackInit(self, app, id, committed):
-        #If the country is already being attacked
+        self.money -= committed
+        #If the country is already being attacked, add committed troops to current attack
         for i in range(len(self.attacks)):
             if (self.attacks[i][1] == id):
                 temp = self.attacks[i]
@@ -70,7 +71,6 @@ class country:
                 temp[3]+committed)
                 return
 
-        self.money -= committed
         searchQueue = []
         neighbours = 0
         density = 5.0

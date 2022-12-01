@@ -220,7 +220,7 @@ def drawNames(app, canvas):
 
     for i in range(len(app.board)):
         for j in range(len(app.board[0])):
-            #For top left corner what is the biggest possible text box?
+            #For each top left corner what is the biggest possible text box?
             if (app.board[i][j] == -1):
                 continue #To avoid evaluating empty space
             current = app.dict[app.board[i][j]]
@@ -229,13 +229,16 @@ def drawNames(app, canvas):
             if (current.row == -1):
                 current.row = i
                 current.col = j
+            #While maxWidth can be expanded, keep expanding maxWidth
+            # and update row,col accordingly
             while (i1 < len(app.board) and j1 < len(app.board[0]) and 
             app.board[i][j] == app.board[i1][j1] and
             borders[i1][j1]-borders[i1][j]-borders[i][j1]+borders[i][j] == 0):
                 current.maxWidth += 1
                 current.row = i
                 current.col = j
-                i1, j1 = int(i+current.maxWidth*current.ratio),int(j+current.maxWidth)
+                i1 = int(i+current.maxWidth*current.ratio)
+                j1 = int(j+current.maxWidth)
     
     for key in app.dict:
         drawName(app,app.dict[key],canvas)
@@ -244,12 +247,15 @@ def drawName(app,current,canvas):
     x,y = boardToDisplay(app,current.row+0.5,current.col+current.maxWidth/2)
     textLength = max(len(current.name),len(str(current.money)))
     widthPerLetter = current.maxWidth / textLength
-    fontSize = roundHalfUp(widthPerLetter * 0.01 * (app.boardBottomRight[0] - app.boardTopLeft[0]))
+    fontSize = roundHalfUp(widthPerLetter * 0.01 * 
+                            (app.boardBottomRight[0] - app.boardTopLeft[0]))
     if (fontSize < 6):
         return
     fill = "white"
     color = current.color #Color of the country
-    if (((int(color[1:3],base=16)+int(color[3:5],base=16)+int(color[5:],base=16))/3)>80):
+    brightness = (int(color[1:3],base=16)+int(color[3:5],base=16)+
+                                                    int(color[5:],base=16))/3
+    if (brightness > 80):
         fill = "black" #adjusts text color if white text will be too difficult to see
     canvas.create_text(x, y+fontSize*0.5, fill=fill, 
     font=('Comic Sans MS', fontSize, 'bold italic'), text=current.name)
