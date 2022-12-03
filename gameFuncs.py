@@ -308,9 +308,8 @@ def gameMouseReleased(app, event):
     player = app.dict[0]
     if (event.y < app.height-app.hudHeight):
         id = unScale(app,event)
-        if (id != None):
-            player.attackInit(app,id,
-            int(player.attackProportion*player.money))
+        if (id != None and id != player.id):
+            player.attackInit(id,int(player.attackProportion*player.money))
 
 def gameMouseDragged(app, event):
     player = app.dict[0]

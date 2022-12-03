@@ -19,7 +19,7 @@ class country:
         self.size = 1
         self.attackProportion = 0.3 #Must be between 0 and 1 inclusive
         self.growthRate = 0.0
-        self.attacks = [] #(queue, who is being attacked, money, original money)
+        self.attacks = dict() #(money, original money)
 
         #For the bots
         self.threshold = random.randint(30,100)/100 #What threshold bots attack at
@@ -27,7 +27,7 @@ class country:
         self.aggro = random.randint(10,30)/100 #How much bots attack with
 
         #For drawing name
-        self.ratio = 2.4 / max(len(self.name),len(str(self.money))) #ratio of height/width
+        self.ratio = 2.5 / max(len(self.name),len(str(self.money))) #ratio of height/width
         self.maxWidth = 0
         self.row = -1
         self.col = -1
@@ -61,19 +61,22 @@ class country:
         return False
 
     #initializing queue for dfs
-    def attackInit(self, app, id, committed):
+    def attackInit(self, id, committed):
         self.money -= committed
         #If the country is already being attacked, add committed troops to current attack
-        for i in range(len(self.attacks)):
-            if (self.attacks[i][1] == id):
-                temp = self.attacks[i]
-                self.attacks[i] = (temp[0],temp[1],temp[2]+committed,
-                temp[3]+committed)
-                return
+        if (id not in self.attacks):
+            self.attacks[id] = (committed,committed)
+        else:
+            temp = self.attacks[id]
+            self.attacks[id] = (temp[0]+committed,temp[1]+committed)
 
-        searchQueue = []
+    def incrementAttack(self, app, id):
+        if (id != -1 and (id not in app.dict or app.dict[id].size == 0)):
+            self.attacks[id] = None
+            return
         neighbours = 0
         density = 5.0
+        money = self.attacks[id][1]
         if (id != -1):
             density = app.dict[id].money/app.dict[id].size
         for i in range(len(app.board)):
@@ -83,81 +86,34 @@ class country:
                     neighbours += 1
                     app.board[i][j] = -2
         #If committed troops are insufficient for conquering
-        if (neighbours * density > committed):
+        if (neighbours * density > money):
             #Reset game board to original state
             for i in range(len(app.board)):
                 for j in range(len(app.board[0])):
                     if (app.board[i][j] == -2):
                         app.board[i][j] = id
             if (id != -1):
-                    app.dict[id].money -= committed
+                    app.dict[id].money -= money
+            self.attacks[id] = None
             return
         for i in range(len(app.board)):
             for j in range(len(app.board[0])):
                 #If current tile == id and borders the attacking country
                 if (app.board[i][j] == -2):
                     app.board[i][j] = self.id
-                    searchQueue.append((i,j))
-        self.size += len(searchQueue)
+        self.size += neighbours
         if (id != -1):
-            app.dict[id].size -= len(searchQueue)
-            app.dict[id].money -= roundHalfUp(len(searchQueue)*density)
-        self.attacks.append((searchQueue, id,
-                committed-roundHalfUp(len(searchQueue)*density), committed))
-        
+            app.dict[id].size -= neighbours
+            app.dict[id].money -= roundHalfUp(neighbours*density)
+        self.attacks[id] = (money-roundHalfUp(neighbours*density), 
+        self.attacks[id][1])
+
     def incrementAttacks(self, app):
-        index = 0
-        for i in self.attacks:
-            id = i[1]
-            if (id != -1 and (id not in app.dict or app.dict[id].size <= 0)):
-                self.attacks.pop(index)
-                continue
-            #Search for next depth
-            density = 5.0
-            if (id != -1):
-                density = app.dict[id].money/app.dict[id].size
-            newlyAdded = []
-            money = i[2]
-            #Find all tiles to be conquered that neighbor the tiles in the current queue
-            for j in i[0]:
-                if (not j[0]-1 < 0 and app.board[j[0]-1][j[1]]==id):
-                    app.board[j[0]-1][j[1]] = self.id
-                    newlyAdded.append((j[0]-1,j[1]))
-                if (not j[0]+1 >= len(app.board) and
-                app.board[j[0]+1][j[1]] == id):
-                    app.board[j[0]+1][j[1]] = self.id
-                    newlyAdded.append((j[0]+1,j[1]))
-                if (not j[1]-1 < 0 and app.board[j[0]][j[1]-1]==id):
-                    app.board[j[0]][j[1]-1] = self.id
-                    newlyAdded.append((j[0],j[1]-1))
-                if (not j[1]+1 >= len(app.board[0]) and
-                app.board[j[0]][j[1]+1] == id):
-                    app.board[j[0]][j[1]+1] = self.id
-                    newlyAdded.append((j[0],j[1]+1))
-                #If the attack has run out of money
-                if (len(newlyAdded)*density>money):
-                    break
-            #If the attack has run out of money
-            if (len(newlyAdded)*density>money):
-                #Replace modified tiles
-                for i in newlyAdded:
-                    app.board[i[0]][i[1]] = id
-                self.attacks.pop(index)
-                if (id != -1):
-                    app.dict[id].money -= money
-            elif (len(newlyAdded) == 0):
-                #Attack has terminated because there is no land to conquer
-                #Remaining money is refunded
-                self.money += i[2]
-                self.attacks.pop(index)
-            else:
-                #Update queue
-                self.attacks[index] = (newlyAdded, id,
-                money-roundHalfUp(len(newlyAdded)*density), i[3])
-                self.size += len(newlyAdded)
-                if (id != -1):
-                    app.dict[id].size -= len(newlyAdded)
-                    app.dict[id].money -= roundHalfUp(len(newlyAdded)*density)
-            index += 1
+        toRemove = []
+        for key in self.attacks:
+            self.incrementAttack(app,key)
+            if (self.attacks[key] == None):
+                toRemove.append(key)
 
-
+        for i in toRemove:
+            del self.attacks[i]
