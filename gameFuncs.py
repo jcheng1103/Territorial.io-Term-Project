@@ -3,6 +3,7 @@ from cmu_112_graphics import *
 from countryClass import *
 from gameAI import *
 from buttonClass import *
+import os
 
 def roundHalfUp(d): #helper-fn
     # Round to nearest with ties going away from zero.
@@ -20,8 +21,6 @@ def gameInit(app):
     #Which section of board will be displayed (top left and bottom right bound)
     app.boardTopLeft = (0,0)
     app.boardBottomRight = (app.width,app.width)
-    app.mouseX = 0
-    app.mouseY = 0
     app.mouseWasDragged = True
     app.hudHeight = app.height-app.cols*app.cellSize
     app.showLeaderBoard = False
@@ -35,17 +34,28 @@ def gameInit(app):
     outline="#A0A0A0",font=('Comic Sans MS', 40, 'bold italic'))
     app.plusButton = button((x1,y0,x1+(y1-y0),y1,),fill="#303030",
     outline="#A0A0A0",font=('Comic Sans MS', 40, 'bold italic'))
-    app.warningWindowDims = (app.width/2-200,app.width/2-150,
-                        app.width/2+200,app.width/2+150)
+    app.warningWindowDims = (app.width/2-250,app.width/2-150,
+                        app.width/2+250,app.width/2+150)
     x0,y0,x1,y1 = app.warningWindowDims
     font=('Comic Sans MS', 20, 'bold italic')
     app.yesButton = button((x0+(x1-x0)*0.1,y0+(y1-y0)*0.7,
                     x0+(x1-x0)*0.3,y0+(y1-y0)*0.85),"#00FF00","white",font)
     app.noButton = button((x0+(x1-x0)*0.7,y0+(y1-y0)*0.7,
                     x0+(x1-x0)*0.9,y0+(y1-y0)*0.85),"#FF0000","white",font)
-    app.gameOver = False
-    app.players = 5
+    app.returnToMenuButton = button((x0+(x1-x0)*0.3,y0+(y1-y0)*0.7,
+                    x0+(x1-x0)*0.7,y0+(y1-y0)*0.85),"#0000FF","white",font)
     app.defaultFill = "#1A1A1A"
+
+    if (app.loadFile == None):
+        newGameInit(app)
+    else:
+        loadGame(app)
+    
+    app.loadFile = None
+    
+
+def newGameInit(app):
+    app.players = 5
     app.countryColors = [app.playerColor,"#ffff00","#00ff00","#00ffff","#ff0000"]
     app.names = [app.playerName, "Bot 1", "Bot 2", "Bot 3", "Bot 4"]
     #Dictionary that supports using a country's integer id to find the
@@ -64,8 +74,77 @@ def gameInit(app):
         while (app.board[row][col] == 0):
             row = random.randint(0,app.rows-1)
             col = random.randint(0,app.cols-1)
-        app.dict[i] = country(i,app.countryColors[i],app.names[i])
+        temp = dict()
+        app.dict[i] = country(i,app.countryColors[i],app.names[i],attacks=temp)
         app.board[row][col] = i
+
+splitStr = "@"
+def loadGame(app):
+    with open(app.loadFile) as f:
+        line = f.readline()
+        app.players = int(line)
+
+        #Reading in data for each country
+        app.dict = {}
+        for i in range(app.players):
+            data = f.readline().split(splitStr)
+            data[0] = int(data[0])
+            data[3] = int(data[3])
+            data[4] = int(data[4])
+            data[5] = float(data[5])
+            attacks = dict()
+            for i in range(7,len(data)-3,3):
+                dict[data[i]] = (data[i+1],data[i+2])
+            app.dict[data[0]] = country(data[0],data[1],data[2],data[3],data[4],
+            data[5],attacks)
+        
+        #Reading in data for the board
+        bData = f.readline()
+        app.board = []
+        while (bData != ""):
+            temp = []
+            for i in bData.split(splitStr):
+                if (i == "\n"):
+                    break
+                temp.append(int(i))
+            app.board.append(temp)
+            bData = f.readline()
+        f.close()
+
+def saveGame(app):
+    #Open file
+    temp = app.getUserInput("Enter save file name:")
+    while (temp != None and os.path.isfile(temp)):
+        temp = app.getUserInput("""Save file already exists, 
+                                please enter another name:""")
+    if (temp == None):
+        return
+    
+    f = open(temp, "w")
+
+
+    f.write(str(app.players)+"\n")
+
+    #Saving data for each country
+    for i in app.dict:
+        c = app.dict[i]
+        temp = [i,c.color,c.name,c.money,c.size,c.attackProportion]
+        for key in c.attacks:
+            temp.append(key)
+            temp.append(c.attacks[key][0])
+            temp.append(c.attacks[key][1])
+        temp.append("\n")
+        f.write(splitStr.join(map(str, temp)))
+    
+    #Saving data for the board
+    for row in app.board:
+        temp = []
+        for i in row:
+            temp.append(str(i))
+        temp.append("\n")
+        f.write(splitStr.join(temp))
+    f.close()
+
 
 #Finds the position to draw something on canvas based on position in game board
 def boardToDisplay(app,row,col):
@@ -73,6 +152,9 @@ def boardToDisplay(app,row,col):
     x = app.boardTopLeft[0] + col * width / app.cols
     y = app.boardTopLeft[1] + row * width / app.rows
     return x,y
+
+def onScreen(app,x0,y0,x1,y1):
+    return not(x1<0 or x0>app.width or y1<0 or y0>app.width)
 
 def drawBoard(app,canvas):
     x0, y0 = app.boardTopLeft
@@ -84,10 +166,10 @@ def drawBoard(app,canvas):
         for j in range(app.cols):
             id = app.board[i][j]
             if (id != -1):
-                #x0,y0=j*cSize+app.boardTopLeft[0],i*cSize+app.boardTopLeft[1]
-                #x1,y1=x0+cSize,y0+cSize
                 x0,y0=boardToDisplay(app,i,j)
                 x1,y1=boardToDisplay(app,i+1,j+1)
+                if (not onScreen(app,x0,y0,x1,y1)):
+                    continue #Offscreen cells aren't drawn to improver performance
                 fill = app.defaultFill
                 if (id in app.dict):
                     fill = app.dict[id].color
@@ -105,7 +187,9 @@ def drawLeaderBoard(app, canvas):
         and app.mouseX<x1 and app.mouseY<y1)):
         canvas.create_rectangle(x0,y0,x1,y1,fill="black",outline="white")
         return
-    x0,y0,x1,y1=app.width*0.7,app.width*0.02,app.width*0.98,app.width*0.4
+    
+    w = app.width
+    x0,y0,x1,y1=w*0.7,w*0.02,w*0.98,y0+(len(app.dict)+1)*25
     canvas.create_rectangle(x0,y0,x1,y1,fill="black",outline="white")
 
     #Make a list of all countries sorted by size
@@ -187,14 +271,13 @@ def drawWarningWindow(app, canvas):
     canvas.create_rectangle(x0,y0,x1,y1,fill="#000000",outline="white")
     canvas.create_text((x0+x1)/2, y0+(y1-y0)*0.2, fill='white', 
     font=('Comic Sans MS', 20, 'bold italic'),
-    text= "Are you sure you want to quit?")
+    text= "Your progress won't be automatically saved.")
     canvas.create_text((x0+x1)/2, y0+(y1-y0)*0.3, fill='white', 
     font=('Comic Sans MS', 20, 'bold italic'),
-    text= "Your progress won't be saved.")
+    text= "Would you like to save your progress?")
 
     app.yesButton.draw(canvas,"Yes")
     app.noButton.draw(canvas,"No")
-    return
 
 def drawNames(app, canvas):
     #Calculating the prefix sum of borders
@@ -262,6 +345,63 @@ def drawName(app,current,canvas):
     canvas.create_text(x, y+fontSize*1.5, fill=fill, text=f"{current.money}",
     font=('Comic Sans MS', fontSize, 'bold italic'))
 
+def drawAttacks(app, canvas):
+    player = app.dict[0]
+    x0,x1 = app.width/2-75,app.width/2+75
+    y0,y1 = 10, 40
+    for i in player.attacks:
+        if (y1 > app.width/2):
+            break
+        if (i == -1):
+            drawBackgroundAttack(app,canvas,app.width/2-75,y0,app.width/2+75,y1)
+        elif (i in app.dict):
+            x0 = app.width/2-75
+            x1 = x0 + len(app.dict[i].name)*20
+            drawAttack(app, canvas,x0,y0,x1,y1,i)
+        y0 += 40
+        y1 += 40
+
+#Draws attack progression meter for conquering into background
+def drawBackgroundAttack(app, canvas,x0,y0,x1,y1):
+    player = app.dict[0]
+    canvas.create_rectangle(x0,y0,x1,y1,fill="#818181",outline="white")
+    canvas.create_text((x0+x1)/2, (y0+y1)/2, fill="white", 
+    text=f"{player.attacks[-1][0]}",
+    font=('Comic Sans MS', 20, 'bold italic'))
+    proportion = player.attacks[-1][0]/player.attacks[-1][1]
+    canvas.create_line(x0,y1,x0+(x1-x0)*proportion,y1,fill="white",width=3)
+
+def drawAttack(app, canvas,x0,y0,x1,y1,id):
+    player = app.dict[0]
+    canvas.create_rectangle(x0,y0,x1+150,y1,fill="#818181",outline="white")
+    
+    #Left part (name)
+    canvas.create_text((x0+x1)/2, (y0+y1)/2, fill="white", 
+    text=f"{app.dict[id].name}",
+    font=('Comic Sans MS', 20, 'bold italic'))
+    canvas.create_line(x1,y0,x1,y1,fill="white",width=1)
+
+    #Right part (troops)
+    canvas.create_text(x1+75, (y0+y1)/2, fill="white", 
+    text=f"{player.attacks[id][0]}",
+    font=('Comic Sans MS', 20, 'bold italic'))
+    proportion = player.attacks[id][0]/player.attacks[id][1]
+    canvas.create_line(x1,y1,x1+150*proportion,y1,fill="white",width=3)
+    
+def drawGameOverWindow(app, canvas):
+    x0,y0,x1,y1 = app.warningWindowDims
+    canvas.create_rectangle(x0,y0,x1,y1,fill="#000000",outline="white")
+    if (app.dict[0].size > 0):
+        canvas.create_text((x0+x1)/2, y0+(y1-y0)*0.2, fill='white', 
+        font=('Comic Sans MS', 20, 'bold italic'),
+        text= "You won!")
+    else:
+        canvas.create_text((x0+x1)/2, y0+(y1-y0)*0.2, fill='white', 
+        font=('Comic Sans MS', 20, 'bold italic'),
+        text= "You lost!")
+
+    app.returnToMenuButton.draw(canvas,"Return to menu")
+
 def unScale(app, event):
     width = (app.boardBottomRight[0]-app.boardTopLeft[0])
     j = int((event.x-app.boardTopLeft[0])/width*app.cols)
@@ -277,11 +417,18 @@ def gameMousePressed(app, event):
     if (app.warningWindow):
         if (app.yesButton.checkBounds(event)):
             app.state = 0
+            saveGame(app)
             app.warningWindow = False
         if (app.noButton.checkBounds(event)):
+            app.state = 0
             app.warningWindow = False
         return
-
+    
+    if (app.gameOver):
+        if (app.returnToMenuButton.checkBounds(event)):
+            app.state = 0
+            app.gameOver = False
+        return
     #For when the game is continuing
     #The id of the player is always 0
     player = app.dict[0]
@@ -302,14 +449,14 @@ def gameMousePressed(app, event):
 def gameMouseReleased(app, event):
     #Checking if an attack is taking place
     #If statement checks to see if the mouse was being dragged
-    if (app.mouseWasDragged):
+    if (app.mouseWasDragged or app.warningWindow or app.gameOver):
         return
     
     player = app.dict[0]
     if (event.y < app.height-app.hudHeight):
         id = unScale(app,event)
         if (id != None and id != player.id):
-            player.attackInit(id,int(player.attackProportion*player.money))
+            player.attackInit(app,id,int(player.attackProportion*player.money))
 
 def gameMouseDragged(app, event):
     player = app.dict[0]
@@ -358,6 +505,9 @@ def gameTimerFired(app):
         L.append(key)
     for key in L:
         if (app.dict[key].size <= 0):
+            if (key == 0):
+                app.gameOver = True
+                break
             del app.dict[key]
             continue
         app.dict[key].updateMoney()
@@ -367,4 +517,3 @@ def gameTimerFired(app):
 
     if (0 not in app.dict or len(app.dict) == 1):
         app.gameOver = True
-        app.state = 0

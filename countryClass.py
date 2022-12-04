@@ -1,7 +1,7 @@
 import math
 import decimal
-from collections import deque
 import random
+from gameAI import *
 
 def roundHalfUp(d): #helper-fn
     # Round to nearest with ties going away from zero.
@@ -11,15 +11,16 @@ def roundHalfUp(d): #helper-fn
     return int(decimal.Decimal(d).to_integral_value(rounding=rounding))
 
 class country:
-    def __init__(self, id, color, name):
+    def __init__(self, id, color, name, money = 200, size = 1, 
+    attackProportion = 0.3, attacks = "Had to change cause of aliasing"):
         self.id = id #corresponding int on board
         self.color = color #fill color on board
         self.name = name
-        self.money = 200
-        self.size = 1
-        self.attackProportion = 0.3 #Must be between 0 and 1 inclusive
+        self.money = money
+        self.size = size
+        self.attackProportion = attackProportion #Must be between 0 and 1 inclusive
         self.growthRate = 0.0
-        self.attacks = dict() #(money, original money)
+        self.attacks = attacks #(money, original money)
 
         #For the bots
         self.threshold = random.randint(30,100)/100 #What threshold bots attack at
@@ -37,20 +38,22 @@ class country:
     def updateMoney(self):
         #find current position on curve
         L = self.size*1000
-        y = self.money
+        y = max(self.money,1.000001)
         k = 0.05
-        a = 100
+        a = 150
         x = 0
         if (y < L):
             x = math.log(L/y - 1) / -k + a
             x += 1
-            self.growthRate = L/(1+math.exp(-k*(x-a)))/self.money
+            self.growthRate = L/(1+math.exp(-k*(x-a)))/max(self.money,1)
             self.money = roundHalfUp(L/(1+math.exp(-k*(x-a))))
         else:
             self.growthRate = 1.0
         self.money += self.size
         self.money = min(self.size*1500, self.money)
     
+    #Returns true if cell is in country being attacked and is neighbor of 
+    #attacking country
     def isNeighbour(self, app, id, i, j):
         if (app.board[i][j] == id and
         not i-1 < 0 and app.board[i-1][j] == self.id or
@@ -61,7 +64,11 @@ class country:
         return False
 
     #initializing queue for dfs
-    def attackInit(self, id, committed):
+    def attackInit(self, app, id, committed):
+        if (committed == 0):
+            return
+        if (id not in findNeighbours(app,self.id)):
+            return
         self.money -= committed
         #If the country is already being attacked, add committed troops to current attack
         if (id not in self.attacks):
@@ -76,7 +83,7 @@ class country:
             return
         neighbours = 0
         density = 5.0
-        money = self.attacks[id][1]
+        money = self.attacks[id][0]
         if (id != -1):
             density = app.dict[id].money/app.dict[id].size
         for i in range(len(app.board)):
@@ -94,6 +101,10 @@ class country:
                         app.board[i][j] = id
             if (id != -1):
                     app.dict[id].money -= money
+            self.attacks[id] = None
+            return
+        #If there are no more cells that can be conquered
+        if (neighbours == 0):
             self.attacks[id] = None
             return
         for i in range(len(app.board)):

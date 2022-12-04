@@ -23,12 +23,19 @@ def appStarted(app):
                         app.width/2-5,app.height/2+110),"blue",None,font)
     app.settingsButton = button((app.width/2+5,app.height/2+60,
                         app.width/2+120,app.height/2+110),"red",None,font)
+    app.loadButton = button((app.width/2-120,app.height/2+120,
+                        app.width/2+120,app.height/2+220),"#818181",None,
+                        ('Comic Sans MS', 40, 'bold italic'))
     app.warningWindow = False
+    app.gameOver = False
     app.backButton= button((5,5,30,30),"#FF0000","white",
     ('Comic Sans MS', 30, 'bold italic'))
     settingsInit(app)
+    app.mouseX = 0
+    app.mouseY = 0
     app.playerColor = "#0000FF"
     app.playerName = "Player"
+    app.loadFile = None
 
 def mousePressed(app, event):
     app.mouseX, app.mouseY = event.x, event.y
@@ -61,7 +68,7 @@ def mouseMoved(app, event):
 
 def keyPressed(app, event):
     if (event.key == "Escape"):
-        if (app.state == 1 or app.state == 2):
+        if (app.state == 1 or app.state == 2 or app.gameOver):
             app.state = 0
         elif (app.state == 3):
             app.warningWindow = True
@@ -69,7 +76,7 @@ def keyPressed(app, event):
         gameKeyPressed(app,event)
 
 def timerFired(app):
-    if (app.state == 3 and not app.warningWindow):
+    if (app.state == 3 and not app.warningWindow and not app.gameOver):
         gameTimerFired(app)
 
 def redrawAll(app, canvas):
@@ -84,9 +91,11 @@ def redrawAll(app, canvas):
         drawBoard(app, canvas)
         drawHud(app, canvas)
         drawLeaderBoard(app, canvas)
-    
-    if (app.warningWindow):
-        drawWarningWindow(app,canvas)
+        drawAttacks(app, canvas)
+        if (app.warningWindow):
+            drawWarningWindow(app,canvas)
+        if (app.gameOver):
+            drawGameOverWindow(app, canvas)
 
     if (app.state != 0):
         drawBackButton(app,canvas)

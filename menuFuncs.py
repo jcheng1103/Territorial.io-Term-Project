@@ -1,22 +1,28 @@
-import math, copy, random
 from cmu_112_graphics import *
 from gameFuncs import *
+import os
 
 def drawStartScreen(app, canvas):
     #Background
     canvas.create_rectangle(0,0,app.width,app.height,
     fill="#303030")
-    canvas.create_text(app.width/2, app.height*0.3, text='Territorial.io', 
+    canvas.create_text(app.width/2, app.height*0.2, text='Territorial.io', 
     fill='white', font=('Comic Sans MS', 50, 'bold italic'))
+    canvas.create_text(app.width/2, app.height*0.35, 
+    text=f'File currently loaded: {app.loadFile}', 
+    fill='white', font=('Comic Sans MS', 30, 'bold italic'))
 
     app.startButton.draw(canvas,"Start Game")
     app.tutorialButton.draw(canvas,"Tutorial")
     app.settingsButton.draw(canvas,"Settings")
+    app.loadButton.draw(canvas,"Load Save")
 
 def startScreenMousePressed(app, event):
     #If click is within startButton bounds
     if (app.startButton.checkBounds(event)):
         app.state = 3
+        app.mouseX = event.x
+        app.mouseY = event.y
         gameInit(app)
     #If click is within tutorialButton bounds
     if (app.tutorialButton.checkBounds(event)):
@@ -24,6 +30,15 @@ def startScreenMousePressed(app, event):
     #If click is within settingsButton bounds
     if (app.settingsButton.checkBounds(event)):
         app.state = 2
+    
+    if (app.loadButton.checkBounds(event)):
+        temp = app.getUserInput("Enter save file name:")
+        while (temp != None and not os.path.isfile(temp)):
+            temp = app.getUserInput("""Save file doesn't exist, 
+                                    please enter another name:""")
+        if (temp == None):
+            return
+        app.loadFile = temp
     
 def settingsInit(app):
     app.nameChangeButton = (app.width*0.4,app.height*0.2,
@@ -104,6 +119,8 @@ def drawBackButton(app, canvas):
     return
 
 def backButtonEvent(app, event):
+    if (app.gameOver):
+        return
     if (app.backButton.checkBounds(event)):
         if (app.state != 3):
             app.state = 0

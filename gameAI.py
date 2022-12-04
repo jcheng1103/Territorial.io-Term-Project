@@ -18,7 +18,7 @@ def runAi(app, agent):
     #If there is still empty space and agent has some threshold of money
     if (-1 in s):
         if (agent.money > random.randint(agent.size*10,agent.size*50)):
-            agent.attackInit(-1,int(agent.money*agent.aggro))
+            agent.attackInit(app,-1,int(agent.money*agent.aggro))
         return
 
     #threshold not met
@@ -34,5 +34,5 @@ def runAi(app, agent):
     #If the difference between the to countries isn't too big, or growth has stopped
     if (app.dict[smallest].money/(agent.money*agent.aggro) <= agent.tooBig
     or agent.money >= agent.size * 1000):
-        agent.attackInit(smallest,int(agent.money*agent.aggro))
+        agent.attackInit(app,smallest,int(agent.money*agent.aggro))
 
