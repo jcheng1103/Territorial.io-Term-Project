@@ -11,7 +11,7 @@ def roundHalfUp(d): #helper-fn
     return int(decimal.Decimal(d).to_integral_value(rounding=rounding))
 
 class country:
-    def __init__(self, id, color, name, money = 200, size = 1, 
+    def __init__(self, id, color, name, money = 100, size = 1, 
     attackProportion = 0.3, attacks = "Had to change cause of aliasing"):
         self.id = id #corresponding int on board
         self.color = color #fill color on board
@@ -23,7 +23,7 @@ class country:
         self.attacks = attacks #(money, original money)
 
         #For the bots
-        self.threshold = random.randint(30,100)/100 #What threshold bots attack at
+        self.threshold = random.randint(20,40)/100 #What threshold bots attack at
         self.tooBig = random.randint(3,10) #Bots won't attack if the difference is too big
         self.aggro = random.randint(10,30)/100 #How much bots attack with
 

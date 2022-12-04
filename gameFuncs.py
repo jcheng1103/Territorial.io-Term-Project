@@ -78,7 +78,7 @@ def newGameInit(app):
         app.dict[i] = country(i,app.countryColors[i],app.names[i],attacks=temp)
         app.board[row][col] = i
 
-splitStr = "@"
+splitStr = "🤯🤓@🤮🙃"
 def loadGame(app):
     with open(app.loadFile) as f:
         line = f.readline()
