@@ -42,6 +42,8 @@ def gameInit(app):
                     x0+(x1-x0)*0.3,y0+(y1-y0)*0.85),"#00FF00","white",font)
     app.noButton = button((x0+(x1-x0)*0.7,y0+(y1-y0)*0.7,
                     x0+(x1-x0)*0.9,y0+(y1-y0)*0.85),"#FF0000","white",font)
+    app.returnToGameButton = button((x0+(x1-x0)*0.4,y0+(y1-y0)*0.7,
+                    x0+(x1-x0)*0.6,y0+(y1-y0)*0.85),"#606060","white",font)
     app.returnToMenuButton = button((x0+(x1-x0)*0.3,y0+(y1-y0)*0.7,
                     x0+(x1-x0)*0.7,y0+(y1-y0)*0.85),"#0000FF","white",font)
     app.defaultFill = "#1A1A1A"
@@ -55,9 +57,11 @@ def gameInit(app):
     
 
 def newGameInit(app):
-    app.players = 5
-    app.countryColors = [app.playerColor,"#ffff00","#00ff00","#00ffff","#ff0000"]
-    app.names = [app.playerName, "Bot 1", "Bot 2", "Bot 3", "Bot 4"]
+    app.players = 8
+    app.countryColors = [app.playerColor,"#ffff00","#00ff00","#00ffff",
+                        "#ff0000","#A0A0A0","#ff00ff","#fc9105"]
+    app.names = [app.playerName, "Bot 1", "Bot 2", "Bot 3", "Bot 4", "Bot 5", 
+                "Bot 6", "Bot 7"]
     #Dictionary that supports using a country's integer id to find the
     #corrsponding country object
     app.dict = {}
@@ -278,6 +282,7 @@ def drawWarningWindow(app, canvas):
 
     app.yesButton.draw(canvas,"Yes")
     app.noButton.draw(canvas,"No")
+    app.returnToGameButton.draw(canvas,"Unpause")
 
 def drawNames(app, canvas):
     #Calculating the prefix sum of borders
@@ -412,6 +417,8 @@ def unScale(app, event):
 
 def gameMousePressed(app, event):
     app.mouseWasDragged = False
+    if (app.warningWindow):
+        app.mouseWasDragged = True
 
     #When warning window is open
     if (app.warningWindow):
@@ -421,6 +428,8 @@ def gameMousePressed(app, event):
             app.warningWindow = False
         if (app.noButton.checkBounds(event)):
             app.state = 0
+            app.warningWindow = False
+        if (app.returnToGameButton.checkBounds(event)):
             app.warningWindow = False
         return
     

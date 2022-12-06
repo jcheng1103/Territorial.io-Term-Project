@@ -36,6 +36,7 @@ def appStarted(app):
     app.playerColor = "#0000FF"
     app.playerName = "Player"
     app.loadFile = None
+    app.hudExample = app.scaleImage(app.loadImage("hudExample.png"),0.45)
 
 def mousePressed(app, event):
     app.mouseX, app.mouseY = event.x, event.y

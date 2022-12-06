@@ -1,5 +1,6 @@
 from cmu_112_graphics import *
 from gameFuncs import *
+from PIL import Image
 import os
 
 def drawStartScreen(app, canvas):
@@ -131,3 +132,48 @@ def drawTutorialScreen(app, canvas):
     #Background
     canvas.create_rectangle(0,0,app.width,app.height,
     fill="#303030")
+
+    #Text
+    canvas.create_text(app.width/2, app.height*0.05, 
+    text="Welcome to territoiral.io!", 
+    fill='white', font=('Comic Sans MS', 30, 'bold italic'))
+
+    text = "The goal of this game is to conquer the entire map."
+    canvas.create_text(app.width/2, app.height*0.1, 
+    text=text, fill='white', font=('Comic Sans MS', 15, 'bold italic'))
+
+    text = "Click on a neighbouring country (or empty space) to attack and conquer new land."
+    canvas.create_text(app.width/2, app.height*0.15, 
+    text=text, fill='red', font=('Comic Sans MS', 15, 'bold italic'))
+
+    text = "Use the w key and s key to zoom in and out."
+    canvas.create_text(app.width/2, app.height*0.2, 
+    text=text, fill='red', font=('Comic Sans MS', 15, 'bold italic'))
+
+    text = "Drag your mouse to pan the camera."
+    canvas.create_text(app.width/2, app.height*0.25, 
+    text=text, fill='red', font=('Comic Sans MS', 15, 'bold italic'))
+
+    text = "In the game you will see a HUD like the image below:"
+    canvas.create_text(app.width/2, app.height*0.3, 
+    text=text, fill='white', font=('Comic Sans MS', 15, 'bold italic'))
+
+    #Image of Hud
+    canvas.create_image(app.width/2,app.height*0.4,
+    image=ImageTk.PhotoImage(app.hudExample))
+
+    text = "Use the HUD slider to select how much money you want to commit to an attack."
+    canvas.create_text(app.width/2, app.height*0.5, 
+    text=text, fill='white', font=('Comic Sans MS', 15, 'bold italic'))
+
+    text = "Income is the fixed amount of money you gain per game tick based. It is based on your land area."
+    canvas.create_text(app.width/2, app.height*0.55, 
+    text=text, fill='white', font=('Comic Sans MS', 15, 'bold italic'))
+
+    text = "You also gain interest on your money."
+    canvas.create_text(app.width/2, app.height*0.6, 
+    text=text, fill='white', font=('Comic Sans MS', 15, 'bold italic'))
+
+    text = "Unless you conquer new land, your interst rate will decrease as the your money grows higher."
+    canvas.create_text(app.width/2, app.height*0.65, 
+    text=text, fill='white', font=('Comic Sans MS', 15, 'bold italic'))

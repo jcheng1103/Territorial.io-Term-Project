@@ -46,7 +46,7 @@ class country:
             x = math.log(L/y - 1) / -k + a
             x += 1
             self.growthRate = L/(1+math.exp(-k*(x-a)))/max(self.money,1)
-            self.money = roundHalfUp(L/(1+math.exp(-k*(x-a))))
+            self.money = int(L/(1+math.exp(-k*(x-a))))
         else:
             self.growthRate = 1.0
         self.money += self.size
@@ -100,7 +100,9 @@ class country:
                     if (app.board[i][j] == -2):
                         app.board[i][j] = id
             if (id != -1):
-                    app.dict[id].money -= money
+                app.dict[id].money -= money
+            else:
+                self.money += money
             self.attacks[id] = None
             return
         #If there are no more cells that can be conquered
