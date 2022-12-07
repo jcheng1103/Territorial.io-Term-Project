@@ -28,7 +28,7 @@ class country:
         self.aggro = random.randint(10,30)/100 #How much bots attack with
 
         #For drawing name
-        self.ratio = 2.5 / max(len(self.name),len(str(self.money))) #ratio of height/width
+        self.ratio = 2.8 / max(len(self.name),len(str(self.money))) #ratio of height/width
         self.maxWidth = 0
         self.row = -1
         self.col = -1
@@ -46,7 +46,7 @@ class country:
             x = math.log(L/y - 1) / -k + a
             x += 1
             self.growthRate = L/(1+math.exp(-k*(x-a)))/max(self.money,1)
-            self.money = int(L/(1+math.exp(-k*(x-a))))
+            self.money = roundHalfUp(L/(1+math.exp(-k*(x-a))))
         else:
             self.growthRate = 1.0
         self.money += self.size

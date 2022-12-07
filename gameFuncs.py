@@ -282,7 +282,7 @@ def drawWarningWindow(app, canvas):
 
     app.yesButton.draw(canvas,"Yes")
     app.noButton.draw(canvas,"No")
-    app.returnToGameButton.draw(canvas,"Unpause")
+    app.returnToGameButton.draw(canvas,"Resume")
 
 def drawNames(app, canvas):
     #Calculating the prefix sum of borders

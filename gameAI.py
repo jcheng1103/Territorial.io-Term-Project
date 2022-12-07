@@ -44,5 +44,5 @@ def runAi(app, agent):
     #If the difference between the to countries isn't too big, or growth has stopped
     if (app.dict[smallest].money/(agent.money*agent.aggro) <= agent.tooBig
     or agent.money >= agent.size * 1000):
-        agent.attackInit(app,smallest,agent.money*agent.aggro)
+        agent.attackInit(app,smallest,int(agent.money*agent.aggro))
 
